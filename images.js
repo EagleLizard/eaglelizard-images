@@ -13,6 +13,8 @@ const INPUT_DIR = `${__dirname}/${INPUT_DIRNAME}`;
 const OUTPUT_DIR = `${__dirname}/${OUTPUT_DIRNAME}`;
 const MAX_HEIGHT = 682;
 
+const jpgRx = /\.jpg$/;
+
 module.exports = {
   optimizeImages,
 };
@@ -23,7 +25,12 @@ async function optimizeImages() {
   filePaths = await getFilePaths(INPUT_DIR);
   filePaths.sort();
   optimizePromises = filePaths.map(async (filePath, idx) => {
-    await optimize(filePath, idx);
+    try {
+      await optimize(filePath, idx);
+    } catch(e) {
+      console.error(`Error with image: ${filePath}`);
+      console.error(e);
+    }
   });
   await Promise.all(optimizePromises);
 }
@@ -56,8 +63,13 @@ async function optimize(imagePath, idx) {
 
   outPath = path.resolve(OUTPUT_DIR, ...outputPathParts);
   image = sharp(imagePath);
-  await image.resize({ height: MAX_HEIGHT })
-    .toFile(outPath);
+  image = await image.resize({ height: MAX_HEIGHT });
+  if(jpgRx.test(imagePath)) {
+    image.jpeg({
+      quality: 100
+    });
+  }
+  return await image.toFile(outPath);
 }
 
 async function createSubDirectories(sourcePath, dirs) {
@@ -66,8 +78,6 @@ async function createSubDirectories(sourcePath, dirs) {
   for(let i = 0, dir; i < dirs.length; ++i) {
     dir = dirs[i];
     dirPath = path.resolve(sourcePath, ...soFar, dir);
-    console.log('dirPath');
-    console.log(dirPath);
     try {
       await mkdir(dirPath);
     } catch(e) {
