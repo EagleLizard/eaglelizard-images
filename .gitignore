@@ -1,0 +1,13 @@
+node_modules
+package-lock.json
+npm-debug.log
+logs/*
+.DS_Store
+.env
+logs
+.environment
+.nyc_output
+coverage
+.vscode/
+input
+output
